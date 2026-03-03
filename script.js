@@ -6,7 +6,7 @@ import {
   GoogleAuthProvider, 
   signInWithPopup,
   onAuthStateChanged,
-  signOut
+  sendPasswordResetEmail
 } from 'firebase/auth';
 
 // Firebase configuration
@@ -28,11 +28,18 @@ const loginView = document.getElementById('loginView');
 const dashboardView = document.getElementById('dashboardView');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
+const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
+const confirmPasswordInput = document.getElementById('confirmPassword');
 const emailSignInBtn = document.getElementById('emailSignInBtn');
 const googleSignInBtn = document.getElementById('googleSignInBtn');
 const loginError = document.getElementById('loginError');
 const balanceDisplay = document.getElementById('balanceDisplay');
 const forgotPasswordLink = document.getElementById('forgotPassword');
+const signInTab = document.getElementById('signInTab');
+const signUpTab = document.getElementById('signUpTab');
+
+// State for sign in / sign up mode
+let isSignUpMode = false;
 
 // Helper to show error
 const showError = (msg) => {
@@ -44,60 +51,78 @@ const clearError = () => {
   loginError.classList.remove('show');
 };
 
-// ---------- Auth state listener ----------
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    // User logged in → switch to dashboard
-    loginView.classList.remove('active');
-    dashboardView.classList.add('active');
-    // Start mining counter (if not already running)
-    startMiningCounter();
-  } else {
-    // No user → show login
-    dashboardView.classList.remove('active');
-    loginView.classList.add('active');
-    clearError();
-  }
+// Toggle between Sign In and Sign Up tabs
+signInTab.addEventListener('click', () => {
+  signInTab.classList.add('active');
+  signInTab.classList.remove('inactive');
+  signUpTab.classList.add('inactive');
+  signUpTab.classList.remove('active');
+  emailSignInBtn.textContent = 'SIGN IN';
+  confirmPasswordGroup.style.display = 'none';
+  isSignUpMode = false;
+  clearError();
 });
 
-// ---------- Email/Password login with auto-create ----------
-async function handleEmailLogin(email, password) {
+signUpTab.addEventListener('click', () => {
+  signUpTab.classList.add('active');
+  signUpTab.classList.remove('inactive');
+  signInTab.classList.add('inactive');
+  signInTab.classList.remove('active');
+  emailSignInBtn.textContent = 'SIGN UP';
+  confirmPasswordGroup.style.display = 'block';
+  isSignUpMode = true;
+  clearError();
+});
+
+// ---------- Email/Password login / sign up ----------
+async function handleEmailAuth(email, password, confirmPassword) {
   if (!email || !password) {
     showError('Email and password are required.');
-    return;
+    return false;
   }
-  clearError();
 
-  try {
-    // Try to sign in
-    await signInWithEmailAndPassword(auth, email, password);
-  } catch (signInErr) {
-    // If user not found or invalid credential, attempt to create account
-    if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential') {
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        // creation successful → user is now signed in (onAuthStateChanged will update UI)
-      } catch (createErr) {
-        // Handle creation errors
-        if (createErr.code === 'auth/weak-password') {
-          showError('Password must be at least 6 characters.');
-        } else if (createErr.code === 'auth/invalid-email') {
-          showError('Invalid email address.');
-        } else if (createErr.code === 'auth/email-already-in-use') {
-          showError('Email already in use. Please try signing in.');
-        } else {
-          showError(createErr.message);
-        }
+  if (isSignUpMode) {
+    // Sign up: validate password match
+    if (password !== confirmPassword) {
+      showError('Passwords do not match.');
+      return false;
+    }
+    if (password.length < 6) {
+      showError('Password must be at least 6 characters.');
+      return false;
+    }
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      return true;
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') {
+        showError('Email already in use. Please sign in.');
+      } else if (err.code === 'auth/invalid-email') {
+        showError('Invalid email address.');
+      } else {
+        showError(err.message);
       }
-    } else {
-      // Other sign-in errors
-      if (signInErr.code === 'auth/wrong-password') {
+      return false;
+    }
+  } else {
+    // Sign in
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return true;
+    } catch (err) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        // Optionally auto-create (as before) but we want explicit sign up now.
+        // We'll keep auto-create for simplicity or show error.
+        // Let's show error prompting to sign up.
+        showError('Account not found. Please sign up first.');
+      } else if (err.code === 'auth/wrong-password') {
         showError('Wrong password.');
-      } else if (signInErr.code === 'auth/too-many-requests') {
+      } else if (err.code === 'auth/too-many-requests') {
         showError('Too many attempts. Try later.');
       } else {
-        showError(signInErr.message);
+        showError(err.message);
       }
+      return false;
     }
   }
 }
@@ -117,13 +142,33 @@ async function handleGoogleSignIn() {
   }
 }
 
-// ---------- Logout (optional, not directly used but can be added) ----------
-// (We don't have a logout button in the design, but you can add one later)
+// ---------- Forgot Password ----------
+async function handleForgotPassword() {
+  const email = prompt('Enter your email address to reset your password:');
+  if (!email) return;
+  try {
+    await sendPasswordResetEmail(auth, email);
+    alert('Password reset email sent! Check your inbox.');
+  } catch (err) {
+    if (err.code === 'auth/user-not-found') {
+      alert('No account found with this email.');
+    } else {
+      alert('Error: ' + err.message);
+    }
+  }
+}
 
 // Event listeners
-emailSignInBtn.addEventListener('click', (e) => {
+emailSignInBtn.addEventListener('click', async (e) => {
   e.preventDefault();
-  handleEmailLogin(usernameInput.value.trim(), passwordInput.value);
+  clearError();
+  const email = usernameInput.value.trim();
+  const password = passwordInput.value;
+  const confirm = confirmPasswordInput ? confirmPasswordInput.value : '';
+  const success = await handleEmailAuth(email, password, confirm);
+  if (success) {
+    // Auth state listener will switch view
+  }
 });
 
 googleSignInBtn.addEventListener('click', (e) => {
@@ -131,23 +176,60 @@ googleSignInBtn.addEventListener('click', (e) => {
   handleGoogleSignIn();
 });
 
+forgotPasswordLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  handleForgotPassword();
+});
+
 // Enter key on inputs
-[usernameInput, passwordInput].forEach(input => {
-  input.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') emailSignInBtn.click();
+[usernameInput, passwordInput, confirmPasswordInput].forEach(input => {
+  if (input) {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') emailSignInBtn.click();
+    });
+  }
+});
+
+// ---------- Auth state listener ----------
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loginView.classList.remove('active');
+    dashboardView.classList.add('active');
+    startMiningCounter();
+  } else {
+    dashboardView.classList.remove('active');
+    loginView.classList.add('active');
+    clearError();
+  }
+});
+
+// ---------- Bottom Navigation ----------
+const navItems = document.querySelectorAll('.nav-item');
+navItems.forEach((item, index) => {
+  item.addEventListener('click', () => {
+    // Remove active from all
+    navItems.forEach(nav => nav.classList.remove('active'));
+    item.classList.add('active');
+    // If clicked item is not Home (index 0), show coming soon message
+    if (index !== 0) {
+      alert('This feature is coming soon!');
+    }
   });
 });
 
-forgotPasswordLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  alert('Password reset can be implemented with sendPasswordResetEmail().');
+// ---------- Stats Cards Click ----------
+const statCards = document.querySelectorAll('.stat-card');
+statCards.forEach(card => {
+  card.addEventListener('click', () => {
+    alert(`Action triggered: ${card.querySelector('.stat-label').textContent}`);
+  });
 });
 
-// ---------- Mining counter (only runs when dashboard is active) ----------
+// ---------- Mining counter ----------
 let miningInterval = null;
 
 function startMiningCounter() {
-  if (miningInterval) return; // already running
+  if (miningInterval) return;
   let balance = 0.0;
   const INCREMENT = 0.00000005;
 
@@ -156,12 +238,11 @@ function startMiningCounter() {
     balanceDisplay.textContent = balance.toFixed(8);
   }
 
-  // Update immediately and then every second
   updateBalance();
   miningInterval = setInterval(updateBalance, 1000);
 }
 
-// Stop counter when user logs out (optional, but good practice)
+// Stop counter on logout
 onAuthStateChanged(auth, (user) => {
   if (!user && miningInterval) {
     clearInterval(miningInterval);
