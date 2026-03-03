@@ -1,122 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ku">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>MINING ⛏️</title>
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINING ⛏️ - Premium</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  <!-- Login View -->
-  <div id="loginView" class="view active">
-    <div class="glass-card login-card">
-      <div class="tabs">
-        <span class="tab active">SIGN IN</span>
-        <span class="tab inactive">SIGN UP</span>
-      </div>
-      <div class="input-group">
-        <label class="input-label">USERNAME</label>
-        <input type="text" id="username" class="input-field" placeholder="Enter your email">
-      </div>
-      <div class="input-group">
-        <label class="input-label">PASSWORD</label>
-        <input type="password" id="password" class="input-field" placeholder="••••••••">
-      </div>
-      <div class="checkbox-row">
-        <label class="checkbox">
-          <input type="checkbox" checked> <span>Keep me Signed in</span>
-        </label>
-      </div>
-      <button class="btn-primary" id="emailSignInBtn">SIGN IN</button>
-      <div class="separator">
-        <span class="line"></span>
-        <span>OR</span>
-        <span class="line"></span>
-      </div>
-      <button class="btn-google" id="googleSignInBtn">
-        <i class="fab fa-google"></i> Sign in with Google
-      </button>
-      <div class="forgot-password">
-        <a href="#" id="forgotPassword">Forgot Password?</a>
-      </div>
-      <div id="loginError" class="error-message"></div>
+
+    <div id="auth-container" class="container">
+        <div class="glass-card">
+            <div class="tabs">
+                <span id="tab-login" class="tab active" onclick="switchTab('login')">SIGN IN</span>
+                <span id="tab-signup" class="tab" onclick="switchTab('signup')">SIGN UP</span>
+            </div>
+            
+            <div class="input-group">
+                <label>EMAIL</label>
+                <input type="email" id="email" placeholder="example@mail.com">
+            </div>
+            
+            <div class="input-group">
+                <label>PASSWORD</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+
+            <div class="options">
+                <label><input type="checkbox" checked> Keep me Signed in</label>
+            </div>
+
+            <button id="main-btn" class="btn-primary" onclick="handleAuth()">SIGN IN</button>
+            
+            <div class="divider">OR</div>
+            
+            <button class="btn-google" onclick="googleLogin()">
+                <img src="https://www.google.com/favicon.ico"> Sign in with Google
+            </button>
+
+            <p class="forgot-link" onclick="forgotPassword()">Forgot Password?</p>
+        </div>
     </div>
-  </div>
 
-  <!-- Dashboard View -->
-  <div id="dashboardView" class="view">
-    <!-- blue geometric accent shape -->
-    <div class="blue-accent"></div>
-    
-    <div class="dashboard-content">
-      <!-- top bar -->
-      <div class="top-bar">
-        <button class="icon-btn"><i class="fas fa-bars"></i></button>
-        <button class="icon-btn"><i class="fas fa-user-circle"></i></button>
-      </div>
+    <div id="dashboard-container" class="container hidden">
+        <div class="top-nav">
+            <i class="fa-solid fa-bars"></i>
+            <span class="logo">MINING ⛏️</span>
+            <i class="fa-solid fa-user" onclick="logout()"></i>
+        </div>
 
-      <!-- main mining card -->
-      <div class="mining-card glass-card">
-        <div class="mining-icon">
-          <i class="fas fa-hard-hat"></i> ⛏️
+        <div class="main-card glass-card">
+            <div class="mining-icon-container">
+                <div class="glow-ring"></div>
+                <i class="fa-solid fa-pickaxe mining-animate"></i>
+            </div>
+            <p class="balance-label">LIVE BALANCE (BTC)</p>
+            <h1 id="btc-balance">0.00000000</h1>
+            <button class="btn-action">BOOST SPEED <i class="fa-solid fa-bolt"></i></button>
         </div>
-        <div class="balance-container">
-          <span class="balance-label">Live Balance</span>
-          <div class="balance-amount">
-            <span id="balanceDisplay">0.00000000</span> <span class="balance-unit">BTC</span>
-          </div>
-        </div>
-      </div>
 
-      <!-- stats grid (4 cards) -->
-      <div class="stats-grid">
-        <div class="stat-card glass-card">
-          <i class="fas fa-tachometer-alt stat-icon"></i>
-          <div class="stat-label">Hash Rate</div>
-          <div class="stat-value" id="hashRate">45.2 MH/s</div>
+        <div class="stats-grid">
+            <div class="stat-item glass-card">
+                <i class="fa-solid fa-microchip"></i>
+                <p>Hash Rate</p>
+                <span>45.5 MH/s</span>
+            </div>
+            <div class="stat-item glass-card">
+                <i class="fa-solid fa-link"></i>
+                <p>Network</p>
+                <span>Global</span>
+            </div>
         </div>
-        <div class="stat-card glass-card">
-          <i class="fas fa-users stat-icon"></i>
-          <div class="stat-label">Workers</div>
-          <div class="stat-value" id="workers">3</div>
-        </div>
-        <div class="stat-card glass-card">
-          <i class="fas fa-network-wired stat-icon"></i>
-          <div class="stat-label">Network</div>
-          <div class="stat-value" id="network">28.6 T</div>
-        </div>
-        <div class="stat-card glass-card">
-          <i class="fas fa-bolt stat-icon"></i>
-          <div class="stat-label">Power</div>
-          <div class="stat-value" id="power">125 W</div>
-        </div>
-      </div>
 
-      <!-- bottom navigation -->
-      <div class="bottom-nav">
-        <button class="nav-item active"><i class="fas fa-home"></i></button>
-        <button class="nav-item"><i class="fas fa-chart-line"></i></button>
-        <button class="nav-item"><i class="fas fa-cog"></i></button>
-        <button class="nav-item"><i class="fas fa-user"></i></button>
-      </div>
+        <div class="bottom-nav">
+            <div class="nav-item active"><i class="fa-solid fa-house"></i></div>
+            <div class="nav-item"><i class="fa-solid fa-wallet"></i></div>
+            <div class="nav-item"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="nav-item"><i class="fa-solid fa-gear"></i></div>
+        </div>
     </div>
-  </div>
 
-  <!-- Firebase SDK (modular) -->
-  <script type="importmap">
-    {
-      "imports": {
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
-      }
-    }
-  </script>
-  <!-- Custom JS (module) -->
-  <script type="module" src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
