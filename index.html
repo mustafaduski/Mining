@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gratafy — login</title>
+  <!-- modern sans‑serif font (Poppins) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* RESET & BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #1a1b2f;               /* deep dark navy/purple */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow-x: hidden;
+      padding: 1.5rem;
+    }
+
+    /* ----- BACKGROUND SHAPES (pure CSS, no images) ----- */
+    .bg-shapes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;        /* so they don't block any clicks */
+      overflow: hidden;
+    }
+
+    /* large pill / capsule elements rotated -45deg */
+    .pill {
+      position: absolute;
+      background: rgba(45, 48, 80, 0.25);  /* slightly lighter than background */
+      border-radius: 999px;                 /* fully rounded = pill shape */
+      transform: rotate(-45deg);
+    }
+
+    .pill-1 {
+      width: 700px;
+      height: 160px;
+      left: -200px;
+      top: 15%;
+      background: rgba(55, 58, 100, 0.3);
+    }
+
+    .pill-2 {
+      width: 550px;
+      height: 140px;
+      right: -180px;
+      bottom: 10%;
+      background: rgba(60, 64, 110, 0.25);
+    }
+
+    .pill-3 {
+      width: 400px;
+      height: 100px;
+      left: 25%;
+      top: 70%;
+      background: rgba(70, 74, 120, 0.2);
+    }
+
+    /* floating "+" crosses — small, modern tech detail */
+    .cross {
+      position: absolute;
+      color: rgba(255, 255, 255, 0.12);
+      font-size: 2rem;
+      font-weight: 300;
+      user-select: none;
+      transform: rotate(0deg);
+      line-height: 1;
+    }
+
+    .cross-1 { top: 12%; left: 8%; font-size: 2.2rem; opacity: 0.15; transform: rotate(5deg); }
+    .cross-2 { bottom: 18%; right: 12%; font-size: 3rem; opacity: 0.1; transform: rotate(-3deg); }
+    .cross-3 { top: 40%; left: 85%; font-size: 2.5rem; opacity: 0.18; transform: rotate(10deg); }
+    .cross-4 { top: 75%; left: 15%; font-size: 1.8rem; opacity: 0.2; transform: rotate(-5deg); }
+    .cross-5 { top: 20%; left: 50%; font-size: 2rem; opacity: 0.12; transform: translateX(-50%) rotate(2deg); }
+    .cross-6 { bottom: 30%; left: 7%; font-size: 2.6rem; opacity: 0.1; transform: rotate(-8deg); }
+
+    /* MAIN CONTENT – placed above background (z-index) */
+    .content {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      max-width: 460px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* ----- LOGO (above card) ----- */
+    .logo {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: white;
+      text-transform: lowercase;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo span {
+      font-size: 1.4rem;
+      font-weight: 400;
+      margin-left: 0.1rem;
+      opacity: 0.8;
+    }
+
+    /* ----- LOGIN CARD ----- */
+    .card {
+      background-color: #222436;        /* dark grey/blue, lighter than main bg */
+      border-radius: 1.5rem;            /* 24px – but design ~12px? we use 1.5rem = 24px? adjust */
+      /* design said 12px, but with spacious padding 40px, 12px feels small.
+         we use 20px to keep modern, but I'll set 16px to stay close.
+         Actually 12px = 0.75rem. We'll respect: */
+      border-radius: 0.75rem;           /* 12px */
+      box-shadow: 0 25px 50px -8px rgba(0, 0, 0, 0.6);
+      padding: 2.5rem;                  /* 40px */
+      width: 100%;
+      backdrop-filter: blur(2px);       /* subtle depth, optional */
+      transition: transform 0.2s ease;
+    }
+
+    /* input groups (each field with internal label) */
+    .input-group {
+      background-color: #32354a;        /* lighter than card */
+      border-radius: 0.5rem;            /* 8px */
+      padding: 0.75rem 1rem;            /* top/bottom 12px, left/right 16px */
+      margin-bottom: 1.25rem;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    .input-group:focus-within {
+      background-color: #3a3e55;
+      box-shadow: 0 0 0 2px rgba(100, 120, 255, 0.3);
+    }
+
+    /* tiny uppercase label inside top half */
+    .input-label {
+      display: block;
+      font-size: 0.7rem;                /* ~11px */
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: #a6a9c9;
+      text-transform: uppercase;
+      text-align: left;
+      line-height: 1.2;
+      margin-bottom: 0.2rem;
+    }
+
+    /* actual input field – bottom half */
+    .input-field {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      font-weight: 400;
+      color: white;
+      padding: 0.3rem 0 0.2rem;
+    }
+
+    .input-field::placeholder {
+      color: #6f7390;
+      font-weight: 400;
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+
+    /* password field (dots) */
+    .input-field[type="password"] {
+      letter-spacing: 0.1rem;           /* makes dots slightly spaced */
+    }
+
+    /* BUTTON – pill shape, white, with blue circle + arrow */
+    .login-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: white;
+      border: none;
+      border-radius: 50px;              /* perfect pill */
+      padding: 1rem 2rem;
+      margin-top: 1.5rem;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.3s ease;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+    }
+
+    .login-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 30px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .login-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-text {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #1a1b2f;                   /* dark, matches background */
+    }
+
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #3b82f6;         /* vibrant blue */
+      border-radius: 50%;
+      width: 2.2rem;
+      height: 2.2rem;
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 600;
+      line-height: 1;
+      box-shadow: 0 4px 8px rgba(0, 80, 200, 0.3);
+      transition: background 0.2s;
+    }
+
+    .login-btn:hover .btn-icon {
+      background-color: #2563eb;
+    }
+
+    /* forgot link below card */
+    .forgot-link {
+      margin-top: 2rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9b9dbb;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      text-decoration-thickness: 1px;
+      text-decoration-color: rgba(155, 157, 187, 0.3);
+      transition: color 0.2s;
+    }
+
+    .forgot-link:hover {
+      color: #cacdee;
+    }
+
+    /* minor spacing for mobile */
+    @media (max-width: 480px) {
+      .card {
+        padding: 1.8rem;
+      }
+      .logo {
+        font-size: 2.2rem;
+        margin-bottom: 1.5rem;
+      }
+      .btn-text {
+        font-size: 1rem;
+      }
+      .btn-icon {
+        width: 2rem;
+        height: 2rem;
+        font-size: 1.2rem;
+      }
+      .cross {
+        opacity: 0.08;                   /* even softer on small screens */
+      }
+    }
+
+    /* additional touch for very small devices */
+    @media (max-width: 360px) {
+      .card {
+        padding: 1.2rem;
+      }
+    }
+
+    /* make sure inputs don't zoom on iOS */
+    .input-field {
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- pure CSS background shapes (pills and crosses) -->
+  <div class="bg-shapes">
+    <!-- thick rotated pills (-45deg) -->
+    <div class="pill pill-1"></div>
+    <div class="pill pill-2"></div>
+    <div class="pill pill-3"></div>
+
+    <!-- floating "+" crosses, modern tech detail -->
+    <div class="cross cross-1">+</div>
+    <div class="cross cross-2">+</div>
+    <div class="cross cross-3">+</div>
+    <div class="cross cross-4">+</div>
+    <div class="cross cross-5">+</div>
+    <div class="cross cross-6">+</div>
+    <!-- a couple of extra tiny ones for depth -->
+    <div class="cross" style="top: 55%; left: 78%; font-size: 1.5rem; opacity: 0.1;">+</div>
+    <div class="cross" style="top: 88%; left: 45%; font-size: 2rem; opacity: 0.12; transform: rotate(15deg);">+</div>
+  </div>
+
+  <!-- main content (logo, card, footer) -->
+  <div class="content">
+    <!-- text logo: gratafy™ -->
+    <div class="logo">
+      gratafy<span>™</span>
+    </div>
+
+    <!-- login card -->
+    <div class="card">
+      <!-- EMAIL field -->
+      <div class="input-group">
+        <span class="input-label">EMAIL ADDRESS</span>
+        <input class="input-field" type="email" placeholder="hello@samuelmay.co" value="">
+      </div>
+
+      <!-- PASSWORD field -->
+      <div class="input-group">
+        <span class="input-label">PASSWORD</span>
+        <input class="input-field" type="password" placeholder="••••••••" value="">
+      </div>
+
+      <!-- login button (pill + blue circle) -->
+      <button class="login-btn" type="button"> <!-- type="button" to avoid any form submit -->
+        <span class="btn-text">LOG IN</span>
+        <span class="btn-icon" aria-hidden="true">></span>
+      </button>
+    </div>
+
+    <!-- footer link -->
+    <a href="#" class="forgot-link">FORGOT YOUR PASSWORD?</a>
+  </div>
+
+  <!-- small JS? not strictly required, but one liner to make button feel interactive (optional) -->
+  <script>
+    (function() {
+      // just a tiny console reminder that it's a UI demo
+      const btn = document.querySelector('.login-btn');
+      if(btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          // simulate gentle interaction (design demo)
+          console.log('login clicked — demo interaction');
+          // you could add micro feedback, but not required
+        });
+      }
+
+      // prevent any accidental form reloads, and make forgot link demo
+      const forgot = document.querySelector('.forgot-link');
+      forgot?.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('forgot password — demo');
+      });
+    })();
+  </script>
+</body>
+</html>
